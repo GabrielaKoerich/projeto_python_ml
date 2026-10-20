@@ -10,6 +10,7 @@ from src.dados import (
     carregar_dados,
     dividir_dados,
     estruturar_dados,
+    remover_duplicatas,
 )
 
 
@@ -63,11 +64,35 @@ def test_ppd_log_calculado_corretamente():
     assert resultado.loc[2, "PPD_log"] == pytest.approx(2.0)
 
 
+def test_remover_duplicatas(dados_brutos):
+    # Given: 1000 linhas brutas, mas só 400 pacientes únicos
+    assert dados_brutos.duplicated().sum() == 600
+    # When / Then: sobra 1 linha por paciente, 100 por classe
+    df = remover_duplicatas(dados_brutos)
+    assert len(df) == 400
+    assert (df["classe"].value_counts() == 100).all()
+
+
+def test_estruturar_nao_remove_linhas(dados_brutos):
+    # estruturar_dados não mexe nas linhas: a remoção é feita à parte
+    assert len(estruturar_dados(dados_brutos)) == 1000
+
+
 def test_dividir_proporcoes(dados_brutos):
+    # Como na disciplina: as 1000 linhas, sem remover duplicatas
     treino, validacao, teste = dividir_dados(estruturar_dados(dados_brutos))
     assert len(treino) == 700
     assert len(validacao) == 150
     assert len(teste) == 150
-    # Nenhuma linha repetida entre os conjuntos
+    # Nenhuma linha repetida entre os conjuntos (pelos índices)
     assert set(treino.index).isdisjoint(teste.index)
     assert set(validacao.index).isdisjoint(teste.index)
+
+
+def test_sem_vazamento_apos_remover_duplicatas(dados_brutos):
+    # Se as duplicatas forem removidas (análise da seção 9 da AED), nenhum
+    # paciente do teste ou da validação tem cópia idêntica no treino
+    df = estruturar_dados(remover_duplicatas(dados_brutos))
+    treino, validacao, teste = dividir_dados(df)
+    juntos = pd.concat([treino, validacao, teste])
+    assert not juntos.duplicated().any()

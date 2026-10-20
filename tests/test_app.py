@@ -21,3 +21,15 @@ def test_botao_prever_mostra_resultado():
     assert any(r.startswith("Classe prevista") for r in rotulos)
     # tabela com a predição de cada algoritmo
     assert len(app.dataframe) >= 3
+
+
+def test_clusterizacao_troca_de_variaveis():
+    app = AppTest.from_file(APP, default_timeout=300).run()
+    # escolher a mesma variável nas duas opções mostra um aviso
+    app.radio[1].set_value(app.radio[0].value).run()
+    assert not app.exception
+    assert len(app.warning) == 1
+    # escolher outro par refaz o agrupamento sem erro
+    app.radio[1].set_value("IFN-γ").run()
+    assert not app.exception
+    assert len(app.warning) == 0

@@ -1,10 +1,11 @@
 """Testes dos modelos e de integração do pipeline completo."""
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from src.modelos import Classificador, Clusterizador, Regressor
-from src.paginas import interpretar
+from src.paginas import conclusao, interpretar
 from src.pipeline import treinar_tudo
 
 
@@ -88,3 +89,63 @@ def test_silhueta_com_um_grupo_so():
 def test_interpretar_p_valor():
     assert "não rejeita" in interpretar(0.5)
     assert "rejeita H0 (predito difere" in interpretar(0.01)
+
+
+def test_pipeline_usa_as_1000_linhas(resultado):
+    total = len(resultado.treino) + len(resultado.validacao) + len(resultado.teste)
+    assert total == 1000
+
+
+def test_contingencia_e_homogeneidade(resultado):
+    c = resultado.classificador
+    tabela = c.tabela_contingencia(resultado.treino, resultado.teste, "GBM")
+    assert list(tabela.columns) == ["Teste", "Treino"]
+    assert tabela["Teste"].sum() == len(resultado.teste)
+    assert tabela["Treino"].sum() == len(resultado.treino)
+    teste = c.teste_homogeneidade(resultado.treino, resultado.teste, "GBM")
+    assert teste["graus_liberdade"] == 3
+    assert 0.0 <= teste["p_valor"] <= 1.0
+
+
+def test_relatorio_classificacao(resultado):
+    relatorio = resultado.classificador.relatorio(resultado.teste, "k-NN")
+    assert {"precision", "recall", "f1-score"} <= set(relatorio.columns)
+    assert "accuracy" in relatorio.index
+
+
+def test_quatro_testes_da_regressao(resultado):
+    testes = resultado.regressor.testes_treino_teste(
+        resultado.treino, resultado.teste, "Random Forest"
+    )
+    assert set(testes) == {
+        "Kolmogorov-Smirnov",
+        "Teste T (Médias)",
+        "Mann-Whitney (Medianas)",
+        "Levene (Variâncias)",
+    }
+    for valores in testes.values():
+        assert 0.0 <= valores["p_valor"] <= 1.0
+
+
+def test_cluster_treino_validacao(resultado):
+    k = resultado.clusterizador
+    for nome in k.modelos:
+        comp = k.comparar_treino_validacao(resultado.validacao, nome)
+        assert sum(comp["observadas"]) == len(resultado.validacao)
+        assert -1.0 <= comp["ari"] <= 1.0
+
+
+def test_cluster_com_um_grupo_so(resultado):
+    # Um único grupo no treino: o qui-quadrado não se aplica (p = nan)
+    k = Clusterizador()
+    k.treinar(resultado.treino, resultado.validacao)
+    k.rotulos_treino["K-means"] = np.zeros(len(resultado.treino), dtype=int)
+    k.modelos["K-means"].predict = lambda x: np.zeros(len(x), dtype=int)
+    comp = k.comparar_treino_validacao(resultado.validacao, "K-means")
+    assert np.isnan(comp["p_valor"])
+
+
+def test_conclusao_colorida():
+    assert "green" in conclusao(0.5, "IGUAL", "DIFERENTE")
+    assert "red" in conclusao(0.01, "IGUAL", "DIFERENTE")
+    assert "não se aplica" in conclusao(float("nan"), "IGUAL", "DIFERENTE")

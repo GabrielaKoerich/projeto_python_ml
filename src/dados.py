@@ -29,6 +29,22 @@ def carregar_dados(caminho: str = str(CAMINHO_PADRAO)) -> pd.DataFrame:
     return pd.read_csv(caminho)
 
 
+def remover_duplicatas(df: pd.DataFrame) -> pd.DataFrame:
+    """Mantém uma única linha por paciente.
+
+    O banco tem 1000 linhas, mas só 400 pacientes únicos. Usada apenas na
+    seção 9 da AED, para mostrar o efeito das duplicatas. Os modelos seguem
+    a metodologia da disciplina e usam as 1000 linhas (limitação discutida
+    na AED).
+
+    Parametros:
+        df (pd.DataFrame): dados brutos.
+    Retorna:
+        pd.DataFrame: dados sem linhas repetidas.
+    """
+    return df.drop_duplicates().reset_index(drop=True)
+
+
 def estruturar_dados(df: pd.DataFrame) -> pd.DataFrame:
     """Remove constantes, trata faltantes e cria PPD_log.
 

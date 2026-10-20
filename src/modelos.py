@@ -9,7 +9,14 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.stats import chi2_contingency, chisquare, mannwhitneyu
+from scipy.stats import (
+    chi2_contingency,
+    chisquare,
+    ks_2samp,
+    levene,
+    mannwhitneyu,
+    ttest_ind,
+)
 from sklearn.base import clone
 from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.compose import ColumnTransformer
@@ -22,6 +29,7 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     adjusted_rand_score,
+    classification_report,
     confusion_matrix,
     f1_score,
     mean_absolute_error,
@@ -181,6 +189,37 @@ class Classificador(_BaseSupervisionado):
         _, p_valor, _, _ = chi2_contingency(tabela.T)
         return {"p_valor": float(p_valor)}
 
+    def tabela_contingencia(
+        self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
+    ) -> pd.DataFrame:
+        """Quantas vezes cada classe foi PREVISTA no teste e no treino."""
+        pred_teste = pd.Series(self.prever(teste, nome)).value_counts()
+        pred_treino = pd.Series(self.prever(treino, nome)).value_counts()
+        tabela = pd.DataFrame({"Teste": pred_teste, "Treino": pred_treino})
+        tabela = tabela.fillna(0).astype(int).sort_index()
+        tabela.index.name = "Classe_Predita"
+        return tabela
+
+    def teste_homogeneidade(
+        self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
+    ) -> dict[str, float]:
+        """Qui-quadrado (como no app da disciplina): H0 = a distribuição das
+        classes previstas é a mesma no treino e no teste (homogênea)."""
+        tabela = self.tabela_contingencia(treino, teste, nome)
+        estatistica, p_valor, graus, _ = chi2_contingency(tabela)
+        return {
+            "estatistica": float(estatistica),
+            "graus_liberdade": int(graus),
+            "p_valor": float(p_valor),
+        }
+
+    def relatorio(self, df: pd.DataFrame, nome: str | None = None) -> pd.DataFrame:
+        """Classification report do scikit-learn como tabela."""
+        dados = classification_report(
+            df[ALVO_CLASSIFICACAO], self.prever(df, nome), output_dict=True
+        )
+        return pd.DataFrame(dados).T
+
     def tabela_resultados(self, teste: pd.DataFrame) -> pd.DataFrame:
         """Uma linha por algoritmo: validação, teste e teste de hipótese."""
         linhas = []
@@ -269,6 +308,29 @@ class Regressor(_BaseSupervisionado):
         """Mann-Whitney: H0 = predito e observado têm a mesma distribuição."""
         _, p_valor = mannwhitneyu(self.prever(df, nome), df[ALVO_REGRESSAO])
         return {"p_valor": float(p_valor)}
+
+    def testes_treino_teste(
+        self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
+    ) -> dict[str, dict[str, float]]:
+        """Compara as PREVISÕES do treino com as do teste (como no app da
+        disciplina). H0 de cada teste: as duas amostras são iguais em
+        distribuição (KS), média (t), mediana (Mann-Whitney) e variância
+        (Levene)."""
+        pred_treino = self.prever(treino, nome)
+        pred_teste = self.prever(teste, nome)
+        testes = {
+            "Kolmogorov-Smirnov": ks_2samp(pred_treino, pred_teste),
+            "Teste T (Médias)": ttest_ind(pred_treino, pred_teste),
+            "Mann-Whitney (Medianas)": mannwhitneyu(pred_treino, pred_teste),
+            "Levene (Variâncias)": levene(pred_treino, pred_teste),
+        }
+        return {
+            teste_nome: {
+                "estatistica": float(resultado[0]),
+                "p_valor": float(resultado[1]),
+            }
+            for teste_nome, resultado in testes.items()
+        }
 
     def tabela_resultados(self, teste: pd.DataFrame) -> pd.DataFrame:
         linhas = []
@@ -390,6 +452,43 @@ class Clusterizador:
         _, p_valor = chisquare(observados, esperados)
         # com um único grupo o teste não se aplica (p = nan) -> trata como 1
         return {"p_valor": float(np.nan_to_num(p_valor, nan=1.0))}
+
+    def comparar_treino_validacao(
+        self, validacao: pd.DataFrame, nome: str
+    ) -> dict[str, Any]:
+        """Como no app da disciplina:
+        - qui-quadrado de aderência: as frequências dos grupos na validação
+          (pelo modelo do treino) seguem as proporções do treino?
+        - ARI: um modelo ajustado só na validação forma os mesmos grupos que
+          o modelo do treino?"""
+        grupos_treino = pd.Series(self.rotulos_treino[nome]).value_counts(
+            normalize=True
+        )
+        rotulos_valid = pd.Series(self.prever(validacao, nome))
+        observadas = (
+            rotulos_valid.value_counts()
+            .reindex(grupos_treino.index, fill_value=0)
+            .sort_index()
+        )
+        esperadas = (grupos_treino * len(validacao)).sort_index()
+        if len(observadas) > 1:
+            estatistica, p_valor = chisquare(observadas, esperadas)
+        else:
+            estatistica, p_valor = 0.0, float("nan")
+
+        x_valid = self.escala.transform(validacao[self.variaveis])
+        rotulos_modelo_valid = self._criar(nome, self.parametros[nome]).fit_predict(
+            x_valid
+        )
+        ari = adjusted_rand_score(rotulos_valid, rotulos_modelo_valid)
+        return {
+            "grupos_treino": sorted(grupos_treino.index.tolist()),
+            "esperadas": esperadas.round(2).tolist(),
+            "observadas": observadas.tolist(),
+            "estatistica": float(estatistica),
+            "p_valor": float(p_valor),
+            "ari": float(ari),
+        }
 
     def tabela_resultados(self, teste: pd.DataFrame) -> pd.DataFrame:
         linhas = []
