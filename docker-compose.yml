@@ -11,3 +11,8 @@ services:
     ports:
       - "8888:8888"   # Jupyter Lab
       - "8501:8501"   # Streamlit
+    # Jupyter Lab com token fixo "pythonml" (o VS Code precisa de um token
+    # para se conectar ao kernel do container)
+    command: >
+      jupyter lab --ip=0.0.0.0 --port=8888 --allow-root --no-browser
+      --ServerApp.token=pythonml

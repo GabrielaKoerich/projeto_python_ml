@@ -19,4 +19,4 @@ EXPOSE 8888 8501
 
 # Ao subir, o container abre o Jupyter Lab (igual ao container da disciplina)
 CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--allow-root", \
-     "--no-browser", "--ServerApp.token=", "--ServerApp.password="]
+     "--no-browser", "--ServerApp.token=pythonml"]
