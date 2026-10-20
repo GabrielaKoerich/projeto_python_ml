@@ -1,6 +1,6 @@
 # Sistema de Predição com Biomarcadores
 
-![CI](https://github.com/GabrielaKoerich/projeto_python_ML/actions/workflows/ci.yml/badge.svg)
+   ![CI](https://github.com/GabrielaKoerich/projeto_python_ml/actions/workflows/ci.yml/badge.svg)
 
 Projeto final da disciplina **Python Machine Learning**.
 
