@@ -1,0 +1,8 @@
+# Tudo o que roda dentro do container
+-r requirements-dev.txt
+jupyterlab>=4.0
+ipykernel>=6.0
+ydata-profiling>=4.6
+# o ydata-profiling usa pkg_resources, que saiu do setuptools 81 e
+# não vem mais instalado no Python 3.12
+setuptools<81

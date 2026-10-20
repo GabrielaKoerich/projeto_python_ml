@@ -1,0 +1,13 @@
+services:
+  python-ml:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: python-ml
+    volumes:
+      # a pasta do projeto fica espelhada dentro do container:
+      # o que você edita no VS Code aparece na hora no container
+      - .:/app
+    ports:
+      - "8888:8888"   # Jupyter Lab
+      - "8501:8501"   # Streamlit
