@@ -136,7 +136,7 @@ def test_cluster_treino_validacao(resultado):
 
 
 def test_cluster_com_um_grupo_so(resultado):
-    # Um único grupo no treino: o qui-quadrado não se aplica (p = nan)
+    # um único grupo no treino: o qui-quadrado não se aplica (p = nan)
     k = Clusterizador()
     k.treinar(resultado.treino, resultado.validacao)
     k.rotulos_treino["K-means"] = np.zeros(len(resultado.treino), dtype=int)

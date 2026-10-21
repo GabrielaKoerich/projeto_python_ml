@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 
 CAMINHO_PADRAO = Path(__file__).resolve().parent.parent / "dados" / "biomarcadores.csv"
 
-# Variáveis escolhidas na seleção de variáveis (aula 07/09)
+# Variáveis escolhidas na seleção de variáveis
 VARIAVEIS_NUMERICAS = ["TP53", "IFN-γ", "CD3_2", "CD8", "PPD_log", "CD7"]
 VARIAVEIS_CATEGORICAS = ["FOXP3"]
 ALVO_CLASSIFICACAO = "classe"
@@ -55,7 +55,7 @@ def estruturar_dados(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
-    # 1. Remove colunas constantes (apenas 1 valor distinto)
+    # 1. remove colunas constantes (apenas 1 valor distinto)
     constantes = [c for c in df.columns if df[c].nunique(dropna=True) <= 1]
     df = df.drop(columns=constantes)
 
@@ -63,11 +63,11 @@ def estruturar_dados(df: pd.DataFrame) -> pd.DataFrame:
     df["PPD_log"] = np.log1p(df["PPD"])
     df["PPD_log"] = df["PPD_log"].fillna(df["PPD_log"].mean())
 
-    # 3. Demais numéricas faltantes -> mediana
+    # 3. demais numéricas faltantes -> mediana
     for coluna in df.select_dtypes(include="number").columns:
         df[coluna] = df[coluna].fillna(df[coluna].median())
 
-    # 4. Mantém apenas as variáveis selecionadas + alvo
+    # 4. mantme apenas as variáveis selecionadas + alvo
     colunas = VARIAVEIS_NUMERICAS + VARIAVEIS_CATEGORICAS + [ALVO_CLASSIFICACAO]
     return df[colunas].reset_index(drop=True)
 

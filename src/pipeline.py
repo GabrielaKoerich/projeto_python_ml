@@ -23,8 +23,7 @@ class Resultado:
 
 def treinar_tudo() -> Resultado:
     """Executa o projeto de ponta a ponta e devolve modelos treinados."""
-    # Seguindo a metodologia da disciplina, as 1000 linhas são usadas como
-    # vieram (sem remover duplicatas). Ver seção 9 da AED: limitação.
+    # as 1000 linhas são usadas (sem remover duplicatas)
     df = estruturar_dados(carregar_dados())
     treino, validacao, teste = dividir_dados(df)
 

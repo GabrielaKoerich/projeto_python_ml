@@ -27,7 +27,7 @@ def test_carregar_dados_formato(dados_brutos):
 
 
 def test_carregar_dados_tipo_errado():
-    # Um número no lugar do caminho deve ser barrado pelo pydantic
+    # um número no lugar do caminho deve ser barrado pelo pydantic
     with pytest.raises(ValidationError):
         carregar_dados(caminho=10)
 
@@ -79,7 +79,7 @@ def test_estruturar_nao_remove_linhas(dados_brutos):
 
 
 def test_dividir_proporcoes(dados_brutos):
-    # Como na disciplina: as 1000 linhas, sem remover duplicatas
+    # 1000 linhas, sem remover duplicatas
     treino, validacao, teste = dividir_dados(estruturar_dados(dados_brutos))
     assert len(treino) == 700
     assert len(validacao) == 150
@@ -90,7 +90,7 @@ def test_dividir_proporcoes(dados_brutos):
 
 
 def test_sem_vazamento_apos_remover_duplicatas(dados_brutos):
-    # Se as duplicatas forem removidas (análise da seção 9 da AED), nenhum
+    # Se as duplicatas forem removidas, nenhum
     # paciente do teste ou da validação tem cópia idêntica no treino
     df = estruturar_dados(remover_duplicatas(dados_brutos))
     treino, validacao, teste = dividir_dados(df)
