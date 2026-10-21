@@ -1,0 +1,277 @@
+﻿diff --git a/dev/roda_streamlit.ps1 b/dev/roda_streamlit.ps1
+index 690e65a..e34f09e 100644
+--- a/dev/roda_streamlit.ps1
++++ b/dev/roda_streamlit.ps1
+@@ -1,5 +1,4 @@
+-∩╗┐# Roda o app Streamlit DENTRO do container
+-# (equivalente ao roda_streamlit.sh da disciplina).
++∩╗┐# Roda o app Streamlit dentro do container
+ # Uso:  .\dev\roda_streamlit.ps1   -> abra http://localhost:8501
+ # Para parar: Ctrl+C
+ docker exec -it python-ml streamlit run streamlit_app.py --server.port=8501 --server.address=0.0.0.0
+diff --git a/docker/Dockerfile b/docker/Dockerfile
+index 599876e..96effbe 100644
+--- a/docker/Dockerfile
++++ b/docker/Dockerfile
+@@ -17,6 +17,6 @@ COPY . .
+ # 8888 = Jupyter Lab (AED) | 8501 = Streamlit (app)
+ EXPOSE 8888 8501
+ 
+-# Ao subir, o container abre o Jupyter Lab (igual ao container da disciplina)
++# Ao subir, o container abre o Jupyter Lab 
+ CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--allow-root", \
+      "--no-browser", "--ServerApp.token=pythonml"]
+diff --git a/src/dados.py b/src/dados.py
+index c27257d..7af7ba7 100644
+--- a/src/dados.py
++++ b/src/dados.py
+@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
+ 
+ CAMINHO_PADRAO = Path(__file__).resolve().parent.parent / "dados" / "biomarcadores.csv"
+ 
+-# Vari├íveis escolhidas na sele├º├úo de vari├íveis (aula 07/09)
++# Vari├íveis escolhidas na sele├º├úo de vari├íveis
+ VARIAVEIS_NUMERICAS = ["TP53", "IFN-╬│", "CD3_2", "CD8", "PPD_log", "CD7"]
+ VARIAVEIS_CATEGORICAS = ["FOXP3"]
+ ALVO_CLASSIFICACAO = "classe"
+@@ -33,9 +33,7 @@ def remover_duplicatas(df: pd.DataFrame) -> pd.DataFrame:
+     """Mant├⌐m uma ├║nica linha por paciente.
+ 
+     O banco tem 1000 linhas, mas s├│ 400 pacientes ├║nicos. Usada apenas na
+-    se├º├úo 9 da AED, para mostrar o efeito das duplicatas. Os modelos seguem
+-    a metodologia da disciplina e usam as 1000 linhas (limita├º├úo discutida
+-    na AED).
++    se├º├úo 9 da AED, para mostrar o efeito das duplicatas.
+ 
+     Parametros:
+         df (pd.DataFrame): dados brutos.
+@@ -55,7 +53,7 @@ def estruturar_dados(df: pd.DataFrame) -> pd.DataFrame:
+     """
+     df = df.copy()
+ 
+-    # 1. Remove colunas constantes (apenas 1 valor distinto)
++    # 1. remove colunas constantes (apenas 1 valor distinto)
+     constantes = [c for c in df.columns if df[c].nunique(dropna=True) <= 1]
+     df = df.drop(columns=constantes)
+ 
+@@ -63,11 +61,11 @@ def estruturar_dados(df: pd.DataFrame) -> pd.DataFrame:
+     df["PPD_log"] = np.log1p(df["PPD"])
+     df["PPD_log"] = df["PPD_log"].fillna(df["PPD_log"].mean())
+ 
+-    # 3. Demais num├⌐ricas faltantes -> mediana
++    # 3. demais num├⌐ricas faltantes -> mediana
+     for coluna in df.select_dtypes(include="number").columns:
+         df[coluna] = df[coluna].fillna(df[coluna].median())
+ 
+-    # 4. Mant├⌐m apenas as vari├íveis selecionadas + alvo
++    # 4. mantme apenas as vari├íveis selecionadas + alvo
+     colunas = VARIAVEIS_NUMERICAS + VARIAVEIS_CATEGORICAS + [ALVO_CLASSIFICACAO]
+     return df[colunas].reset_index(drop=True)
+ 
+diff --git a/src/modelos.py b/src/modelos.py
+index d643d4b..9b95d91 100644
+--- a/src/modelos.py
++++ b/src/modelos.py
+@@ -1,6 +1,6 @@
+ """Modelos de Clusteriza├º├úo, Classifica├º├úo e Regress├úo (POO).
+ 
+-Cada classe treina V├üRIOS algoritmos, guarda todos e permite avaliar
++Cada classe treina v├írios algoritmos, guarda todos e permite avaliar
+ qualquer um deles pelo nome. O "melhor" ├⌐ s├│ um destaque: todos os
+ resultados ficam dispon├¡veis para compara├º├úo no app.
+ """
+@@ -192,7 +192,7 @@ class Classificador(_BaseSupervisionado):
+     def tabela_contingencia(
+         self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
+     ) -> pd.DataFrame:
+-        """Quantas vezes cada classe foi PREVISTA no teste e no treino."""
++        """Quantas vezes cada classe foi previstano teste e no treino."""
+         pred_teste = pd.Series(self.prever(teste, nome)).value_counts()
+         pred_treino = pd.Series(self.prever(treino, nome)).value_counts()
+         tabela = pd.DataFrame({"Teste": pred_teste, "Treino": pred_treino})
+@@ -203,7 +203,7 @@ class Classificador(_BaseSupervisionado):
+     def teste_homogeneidade(
+         self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
+     ) -> dict[str, float]:
+-        """Qui-quadrado (como no app da disciplina): H0 = a distribui├º├úo das
++        """Qui-quadrado: H0 = a distribui├º├úo das
+         classes previstas ├⌐ a mesma no treino e no teste (homog├¬nea)."""
+         tabela = self.tabela_contingencia(treino, teste, nome)
+         estatistica, p_valor, graus, _ = chi2_contingency(tabela)
+@@ -312,8 +312,7 @@ class Regressor(_BaseSupervisionado):
+     def testes_treino_teste(
+         self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
+     ) -> dict[str, dict[str, float]]:
+-        """Compara as PREVIS├òES do treino com as do teste (como no app da
+-        disciplina). H0 de cada teste: as duas amostras s├úo iguais em
++        """Compara as PREVIS├òES do treino com as do teste. H0 de cada teste: as duas amostras s├úo iguais em
+         distribui├º├úo (KS), m├⌐dia (t), mediana (Mann-Whitney) e vari├óncia
+         (Levene)."""
+         pred_treino = self.prever(treino, nome)
+@@ -456,11 +455,10 @@ class Clusterizador:
+     def comparar_treino_validacao(
+         self, validacao: pd.DataFrame, nome: str
+     ) -> dict[str, Any]:
+-        """Como no app da disciplina:
+-        - qui-quadrado de ader├¬ncia: as frequ├¬ncias dos grupos na valida├º├úo
++        """- qui-quadrado de ader├¬ncia: as frequ├¬ncias dos grupos na valida├º├úo
+           (pelo modelo do treino) seguem as propor├º├╡es do treino?
+         - ARI: um modelo ajustado s├│ na valida├º├úo forma os mesmos grupos que
+-          o modelo do treino?"""
++          o modelo do treino??????"""
+         grupos_treino = pd.Series(self.rotulos_treino[nome]).value_counts(
+             normalize=True
+         )
+@@ -507,6 +505,6 @@ class Clusterizador:
+             )
+         return (
+             pd.DataFrame(linhas)
+-            .sort_values("Silhueta valida├º├úo", ascending=False)
++            .sort_values("Silhueta de valida├º├úo", ascending=False)
+             .reset_index(drop=True)
+         )
+diff --git a/src/paginas.py b/src/paginas.py
+index ccfefca..4ad4e7e 100644
+--- a/src/paginas.py
++++ b/src/paginas.py
+@@ -1,8 +1,7 @@
+ """P├íginas do Streamlit (front end).
+ 
+-Segue o formato do app da disciplina: em cada aba, um cart├úo por
+-algoritmo com os testes de hip├│tese e suas conclus├╡es. Tamb├⌐m mostra uma
+-tabela comparando todos os algoritmos e uma aba para prever novos pacientes.
++em cada aba, um cart├úo por
++algoritmo com os testes de hip├│tese e suas conclus├╡es; uma tabela comparando todos os algoritmos e uma aba para prever novos pacientes.
+ """
+ 
+ from typing import Any
+@@ -76,11 +75,12 @@ class Paginas:
+         self.r = obter_resultado()
+ 
+     def cabecalho(self) -> str:
+-        st.title("Sistema de Predi├º├úo com Biomarcadores")
+-        st.subheader("M├⌐tricas de Modelos de Machine Learning")
++        st.title("M├⌐tricas de Modelos de Machine Learning")
++        st.subheader(
++            "Projeto da disciplina Python Machine Learning ΓÇö Clusteriza├º├úo, Classifica├º├úo e Regress├úo"
++        )
+         st.caption(
+-            "Projeto da disciplina Python Machine Learning ΓÇö "
+-            "Clusteriza├º├úo, Classifica├º├úo e Regress├úo. "
++            "Nome: Gabriela Marino Koerich "
+             f"Treino: {len(self.r.treino)} | Valida├º├úo: {len(self.r.validacao)} | "
+             f"Teste: {len(self.r.teste)} pacientes."
+         )
+@@ -102,11 +102,11 @@ class Paginas:
+         )
+         st.markdown(
+             "Distribui├º├úo dos clusters na valida├º├úo x treino: "
+-            + conclusao(comp["p_valor"], "IGUAL", "DIFERENTE")
++            + conclusao(comp["p_valor"], "Igual", "Diferente")
+         )
+         semelhantes = comp["ari"] >= 0.5
+         cor = "green" if semelhantes else "red"
+-        texto = "S├âO SEMELHANTES" if semelhantes else "S├âO DIFERENTES"
++        texto = "Semelhantes" if semelhantes else "Diferentes"
+         st.markdown(
+             "Modelo do Treino x modelo da Valida├º├úo: "
+             f":{cor}[**{texto}**] (ARI = {comp['ari']:.4f})"
+@@ -131,7 +131,7 @@ class Paginas:
+             variavel_2 = st.radio("Segunda vari├ível:", VARIAVEIS_CLUSTER, index=2)
+         with col[1]:
+             if variavel_1 == variavel_2:
+-                st.warning("Escolha duas vari├íveis diferentes.")
++                st.warning("Escolha duas vari├íveis DIFERENTES.")
+                 return "Vari├íveis iguais"
+             k = obter_clusterizador(variavel_1, variavel_2)
+             st.write(
+@@ -162,8 +162,8 @@ class Paginas:
+             "Distribui├º├úo das classes no treino e no teste: "
+             + conclusao(
+                 teste["p_valor"],
+-                "ESTATISTICAMENTE IGUAL (Homog├¬nea)",
+-                "ESTATISTICAMENTE DIFERENTE (Heterog├¬nea)",
++                "Estatisticamente Igual (Homog├¬nea)",
++                "Estatisticamente Diferente (Heterog├¬nea)",
+             )
+         )
+         acuracia = c.avaliar(self.r.teste, nome)["acuracia"]
+@@ -213,7 +213,7 @@ class Paginas:
+         testes = g.testes_treino_teste(self.r.treino, self.r.teste, nome)
+         for teste_nome, resultado in testes.items():
+             st.markdown(f"**{teste_nome}**")
+-            st.markdown(conclusao(resultado["p_valor"], "IGUAIS", "DIFERENTES"))
++            st.markdown(conclusao(resultado["p_valor"], "Igual", "Diferente"))
+             st.dataframe(
+                 pd.DataFrame(
+                     {"Valores": [resultado["estatistica"], resultado["p_valor"]]},
+diff --git a/src/pipeline.py b/src/pipeline.py
+index 9d21f7e..b8f0713 100644
+--- a/src/pipeline.py
++++ b/src/pipeline.py
+@@ -22,9 +22,8 @@ class Resultado:
+ 
+ 
+ def treinar_tudo() -> Resultado:
+-    """Executa o projeto de ponta a ponta e devolve modelos treinados."""
+-    # Seguindo a metodologia da disciplina, as 1000 linhas s├úo usadas como
+-    # vieram (sem remover duplicatas). Ver se├º├úo 9 da AED: limita├º├úo.
++    """Executa o projeto e devolve modelos treinados."""
++    # as 1000 linhas s├úo usadas (sem remover duplicatas)
+     df = estruturar_dados(carregar_dados())
+     treino, validacao, teste = dividir_dados(df)
+ 
+diff --git a/tests/test_app.py b/tests/test_app.py
+index 149e9bf..3e618d1 100644
+--- a/tests/test_app.py
++++ b/tests/test_app.py
+@@ -1,4 +1,4 @@
+-"""Teste ponta a ponta: abre o app Streamlit sem navegador."""
++"""Teste: abre o app Streamlit sem navegador."""
+ 
+ from pathlib import Path
+ 
+diff --git a/tests/test_dados.py b/tests/test_dados.py
+index 4a9333f..e9e76db 100644
+--- a/tests/test_dados.py
++++ b/tests/test_dados.py
+@@ -27,7 +27,7 @@ def test_carregar_dados_formato(dados_brutos):
+ 
+ 
+ def test_carregar_dados_tipo_errado():
+-    # Um n├║mero no lugar do caminho deve ser barrado pelo pydantic
++    # um n├║mero no lugar do caminho deve ser barrado pelo pydantic
+     with pytest.raises(ValidationError):
+         carregar_dados(caminho=10)
+ 
+@@ -79,7 +79,7 @@ def test_estruturar_nao_remove_linhas(dados_brutos):
+ 
+ 
+ def test_dividir_proporcoes(dados_brutos):
+-    # Como na disciplina: as 1000 linhas, sem remover duplicatas
++    # 1000 linhas, sem remover duplicatas
+     treino, validacao, teste = dividir_dados(estruturar_dados(dados_brutos))
+     assert len(treino) == 700
+     assert len(validacao) == 150
+@@ -90,7 +90,7 @@ def test_dividir_proporcoes(dados_brutos):
+ 
+ 
+ def test_sem_vazamento_apos_remover_duplicatas(dados_brutos):
+-    # Se as duplicatas forem removidas (an├ílise da se├º├úo 9 da AED), nenhum
++    # Se as duplicatas forem removidas, nenhum
+     # paciente do teste ou da valida├º├úo tem c├│pia id├¬ntica no treino
+     df = estruturar_dados(remover_duplicatas(dados_brutos))
+     treino, validacao, teste = dividir_dados(df)
+diff --git a/tests/test_modelos.py b/tests/test_modelos.py
+index e4e4dd0..9b08f84 100644
+--- a/tests/test_modelos.py
++++ b/tests/test_modelos.py
+@@ -136,7 +136,7 @@ def test_cluster_treino_validacao(resultado):
+ 
+ 
+ def test_cluster_com_um_grupo_so(resultado):
+-    # Um ├║nico grupo no treino: o qui-quadrado n├úo se aplica (p = nan)
++    # um ├║nico grupo no treino: o qui-quadrado n├úo se aplica (p = nan)
+     k = Clusterizador()
+     k.treinar(resultado.treino, resultado.validacao)
+     k.rotulos_treino["K-means"] = np.zeros(len(resultado.treino), dtype=int)

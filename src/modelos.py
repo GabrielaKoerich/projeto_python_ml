@@ -312,9 +312,9 @@ class Regressor(_BaseSupervisionado):
     def testes_treino_teste(
         self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
     ) -> dict[str, dict[str, float]]:
-        """Compara as PREVISÕES do treino com as do teste. H0 de cada teste: as duas amostras são iguais em
-        distribuição (KS), média (t), mediana (Mann-Whitney) e variância
-        (Levene)."""
+        """Compara as PREVISÕES do treino com as do teste. H0 de cada teste:
+        as duas amostras são iguais em distribuição (KS), média (t), mediana
+        (Mann-Whitney) e variância (Levene)."""
         pred_treino = self.prever(treino, nome)
         pred_teste = self.prever(teste, nome)
         testes = {
@@ -505,6 +505,6 @@ class Clusterizador:
             )
         return (
             pd.DataFrame(linhas)
-            .sort_values("Silhueta de validação", ascending=False)
+            .sort_values("Silhueta validação", ascending=False)
             .reset_index(drop=True)
         )

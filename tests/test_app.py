@@ -10,7 +10,7 @@ APP = str(Path(__file__).resolve().parent.parent / "streamlit_app.py")
 def test_app_abre_sem_erro():
     app = AppTest.from_file(APP, default_timeout=300).run()
     assert not app.exception
-    assert app.title[0].value == "Sistema de Predição com Biomarcadores"
+    assert app.title[0].value == "Métricas de Modelos de Machine Learning"
 
 
 def test_botao_prever_mostra_resultado():

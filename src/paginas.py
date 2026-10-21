@@ -1,7 +1,8 @@
 """Páginas do Streamlit (front end).
 
-em cada aba, um cartão por
-algoritmo com os testes de hipótese e suas conclusões; uma tabela comparando todos os algoritmos e uma aba para prever novos pacientes.
+Em cada aba, um cartão por algoritmo com os testes de hipótese e suas
+conclusões, uma tabela comparando todos os algoritmos e uma aba para
+prever novos pacientes.
 """
 
 from typing import Any
@@ -77,7 +78,8 @@ class Paginas:
     def cabecalho(self) -> str:
         st.title("Métricas de Modelos de Machine Learning")
         st.subheader(
-            "Projeto da disciplina Python Machine Learning — Clusterização, Classificação e Regressão"
+            "Projeto da disciplina Python Machine Learning — "
+            "Clusterização, Classificação e Regressão"
         )
         st.caption(
             "Nome: Gabriela Marino Koerich "
