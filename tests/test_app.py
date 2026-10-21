@@ -1,4 +1,4 @@
-"""Teste ponta a ponta: abre o app Streamlit sem navegador."""
+"""Teste: abre o app Streamlit sem navegador."""
 
 from pathlib import Path
 

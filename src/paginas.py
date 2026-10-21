@@ -80,7 +80,7 @@ class Paginas:
             "Projeto da disciplina Python Machine Learning — Clusterização, Classificação e Regressão"
         )
         st.caption(
-            "Nome: Gabriela Marino Koerich"
+            "Nome: Gabriela Marino Koerich "
             f"Treino: {len(self.r.treino)} | Validação: {len(self.r.validacao)} | "
             f"Teste: {len(self.r.teste)} pacientes."
         )
