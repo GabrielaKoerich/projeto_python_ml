@@ -1,6 +1,6 @@
 """Modelos de Clusterização, Classificação e Regressão (POO).
 
-Cada classe treina VÁRIOS algoritmos, guarda todos e permite avaliar
+Cada classe treina vários algoritmos, guarda todos e permite avaliar
 qualquer um deles pelo nome. O "melhor" é só um destaque: todos os
 resultados ficam disponíveis para comparação no app.
 """
@@ -192,7 +192,7 @@ class Classificador(_BaseSupervisionado):
     def tabela_contingencia(
         self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
     ) -> pd.DataFrame:
-        """Quantas vezes cada classe foi PREVISTA no teste e no treino."""
+        """Quantas vezes cada classe foi previstano teste e no treino."""
         pred_teste = pd.Series(self.prever(teste, nome)).value_counts()
         pred_treino = pd.Series(self.prever(treino, nome)).value_counts()
         tabela = pd.DataFrame({"Teste": pred_teste, "Treino": pred_treino})
@@ -203,7 +203,7 @@ class Classificador(_BaseSupervisionado):
     def teste_homogeneidade(
         self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
     ) -> dict[str, float]:
-        """Qui-quadrado (como no app da disciplina): H0 = a distribuição das
+        """Qui-quadrado: H0 = a distribuição das
         classes previstas é a mesma no treino e no teste (homogênea)."""
         tabela = self.tabela_contingencia(treino, teste, nome)
         estatistica, p_valor, graus, _ = chi2_contingency(tabela)
@@ -312,8 +312,7 @@ class Regressor(_BaseSupervisionado):
     def testes_treino_teste(
         self, treino: pd.DataFrame, teste: pd.DataFrame, nome: str | None = None
     ) -> dict[str, dict[str, float]]:
-        """Compara as PREVISÕES do treino com as do teste (como no app da
-        disciplina). H0 de cada teste: as duas amostras são iguais em
+        """Compara as PREVISÕES do treino com as do teste. H0 de cada teste: as duas amostras são iguais em
         distribuição (KS), média (t), mediana (Mann-Whitney) e variância
         (Levene)."""
         pred_treino = self.prever(treino, nome)

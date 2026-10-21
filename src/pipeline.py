@@ -22,7 +22,7 @@ class Resultado:
 
 
 def treinar_tudo() -> Resultado:
-    """Executa o projeto de ponta a ponta e devolve modelos treinados."""
+    """Executa o projeto e devolve modelos treinados."""
     # as 1000 linhas são usadas (sem remover duplicatas)
     df = estruturar_dados(carregar_dados())
     treino, validacao, teste = dividir_dados(df)
