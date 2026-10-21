@@ -456,11 +456,10 @@ class Clusterizador:
     def comparar_treino_validacao(
         self, validacao: pd.DataFrame, nome: str
     ) -> dict[str, Any]:
-        """Como no app da disciplina:
-        - qui-quadrado de aderência: as frequências dos grupos na validação
+        """- qui-quadrado de aderência: as frequências dos grupos na validação
           (pelo modelo do treino) seguem as proporções do treino?
         - ARI: um modelo ajustado só na validação forma os mesmos grupos que
-          o modelo do treino?"""
+          o modelo do treino??????"""
         grupos_treino = pd.Series(self.rotulos_treino[nome]).value_counts(
             normalize=True
         )
@@ -507,6 +506,6 @@ class Clusterizador:
             )
         return (
             pd.DataFrame(linhas)
-            .sort_values("Silhueta validação", ascending=False)
+            .sort_values("Silhueta de validação", ascending=False)
             .reset_index(drop=True)
         )

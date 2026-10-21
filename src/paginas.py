@@ -100,11 +100,11 @@ class Paginas:
         )
         st.markdown(
             "Distribuição dos clusters na validação x treino: "
-            + conclusao(comp["p_valor"], "IGUAL", "DIFERENTE")
+            + conclusao(comp["p_valor"], "Igual", "Diferente")
         )
         semelhantes = comp["ari"] >= 0.5
         cor = "green" if semelhantes else "red"
-        texto = "SÃO SEMELHANTES" if semelhantes else "SÃO DIFERENTES"
+        texto = "Semelhantes" if semelhantes else "Diferentes"
         st.markdown(
             "Modelo do Treino x modelo da Validação: "
             f":{cor}[**{texto}**] (ARI = {comp['ari']:.4f})"
@@ -129,7 +129,7 @@ class Paginas:
             variavel_2 = st.radio("Segunda variável:", VARIAVEIS_CLUSTER, index=2)
         with col[1]:
             if variavel_1 == variavel_2:
-                st.warning("Escolha duas variáveis diferentes.")
+                st.warning("Escolha duas variáveis DIFERENTES.")
                 return "Variáveis iguais"
             k = obter_clusterizador(variavel_1, variavel_2)
             st.write(
@@ -160,8 +160,8 @@ class Paginas:
             "Distribuição das classes no treino e no teste: "
             + conclusao(
                 teste["p_valor"],
-                "ESTATISTICAMENTE IGUAL (Homogênea)",
-                "ESTATISTICAMENTE DIFERENTE (Heterogênea)",
+                "Estatisticamente Igual (Homogênea)",
+                "Estatisticamente Diferente (Heterogênea)",
             )
         )
         acuracia = c.avaliar(self.r.teste, nome)["acuracia"]
@@ -211,7 +211,7 @@ class Paginas:
         testes = g.testes_treino_teste(self.r.treino, self.r.teste, nome)
         for teste_nome, resultado in testes.items():
             st.markdown(f"**{teste_nome}**")
-            st.markdown(conclusao(resultado["p_valor"], "IGUAIS", "DIFERENTES"))
+            st.markdown(conclusao(resultado["p_valor"], "Igual", "Diferente"))
             st.dataframe(
                 pd.DataFrame(
                     {"Valores": [resultado["estatistica"], resultado["p_valor"]]},
