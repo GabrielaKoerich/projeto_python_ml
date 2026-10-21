@@ -1,8 +1,7 @@
 """Páginas do Streamlit (front end).
 
-Segue o formato do app da disciplina: em cada aba, um cartão por
-algoritmo com os testes de hipótese e suas conclusões. Também mostra uma
-tabela comparando todos os algoritmos e uma aba para prever novos pacientes.
+em cada aba, um cartão por
+algoritmo com os testes de hipótese e suas conclusões; uma tabela comparando todos os algoritmos e uma aba para prever novos pacientes.
 """
 
 from typing import Any
@@ -76,11 +75,9 @@ class Paginas:
         self.r = obter_resultado()
 
     def cabecalho(self) -> str:
-        st.title("Sistema de Predição com Biomarcadores")
-        st.subheader("Métricas de Modelos de Machine Learning")
+        st.title("Métricas de Modelos de Machine Learning")
+        st.subheader("Projeto da disciplina Python Machine Learning — Clusterização, Classificação e Regressão")
         st.caption(
-            "Projeto da disciplina Python Machine Learning — "
-            "Clusterização, Classificação e Regressão. "
             "Nome: Gabriela Marino Koerich"
             f"Treino: {len(self.r.treino)} | Validação: {len(self.r.validacao)} | "
             f"Teste: {len(self.r.teste)} pacientes."
