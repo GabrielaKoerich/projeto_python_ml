@@ -33,7 +33,7 @@ def remover_duplicatas(df: pd.DataFrame) -> pd.DataFrame:
     """Mantém uma única linha por paciente.
 
     O banco tem 1000 linhas, mas só 400 pacientes únicos. Usada apenas na
-    seção 9 da AED, para mostrar o efeito das duplicatas. 
+    seção 9 da AED, para mostrar o efeito das duplicatas.
 
     Parametros:
         df (pd.DataFrame): dados brutos.

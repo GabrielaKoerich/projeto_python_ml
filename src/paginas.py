@@ -76,7 +76,9 @@ class Paginas:
 
     def cabecalho(self) -> str:
         st.title("Métricas de Modelos de Machine Learning")
-        st.subheader("Projeto da disciplina Python Machine Learning — Clusterização, Classificação e Regressão")
+        st.subheader(
+            "Projeto da disciplina Python Machine Learning — Clusterização, Classificação e Regressão"
+        )
         st.caption(
             "Nome: Gabriela Marino Koerich"
             f"Treino: {len(self.r.treino)} | Validação: {len(self.r.validacao)} | "
