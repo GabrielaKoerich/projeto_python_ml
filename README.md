@@ -10,6 +10,7 @@ Projeto final da disciplina **Python Machine Learning** — Gabriela Marino Koer
 | 1ª — AED no Jupyter Lab (local) | [http://localhost:8888/lab/tree/notebooks/01_AED_relatorio_comentado.ipynb?token=pythonml](http://localhost:8888/lab/tree/notebooks/01_AED_relatorio_comentado.ipynb?token=pythonml) — com o container ligado (`.\dev\subir_docker.ps1`) |
 | 2ª — App (deploy) | https://disciplinapythonml-jbqmcul4xbvnx3t4ugmhjn.streamlit.app/ |
 | 3ª — Testes automatizados | [`tests/`](tests) · [Execuções do CI](https://github.com/GabrielaKoerich/projeto_python_ml/actions) |
+| 1ª — Relatório ydata-profiling | [Abrir relatório](https://GabrielaKoerich.github.io/projeto_python_ml/notebooks/relatorio_aed.html) |
 
 ## Pergunta e objetivos
 A partir de biomarcadores de 1000 pacientes:
