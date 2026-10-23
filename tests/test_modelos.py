@@ -73,7 +73,7 @@ def test_melhores_parametros_sem_prefixo(resultado):
     assert "n_neighbors" in params
 
 
-def test_predicao_novo_paciente(resultado):
+def test_novo_paciente(resultado):
     novo = resultado.teste.head(1)
     assert len(resultado.classificador.prever(novo)) == 1
     assert len(resultado.regressor.prever(novo)) == 1

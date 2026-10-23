@@ -1,4 +1,4 @@
-# Sistema de Predição com Biomarcadores
+## Métricas de Modelos de Machine Learning com Biomarcadores
 
    ![CI](https://github.com/GabrielaKoerich/projeto_python_ml/actions/workflows/ci.yml/badge.svg)
 
