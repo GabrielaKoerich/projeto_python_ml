@@ -247,7 +247,7 @@ class Paginas:
         return "Regressão exibida"
 
     # ------------------------------------------------------------------ #
-    # Dados e Predição
+    # Dados
     # ------------------------------------------------------------------ #
     def aba_dados(self) -> str:
         r = self.r
@@ -274,26 +274,6 @@ class Paginas:
             hide_index=True,
         )
         return "Dados exibidos"
-
-    def aba_predicao(self) -> str:
-        st.subheader("Faça uma predição para um novo paciente")
-        base = self.r.treino
-        col = st.columns(3)
-        entrada = {
-            "TP53": col[0].number_input("TP53", value=float(base["TP53"].median())),
-            "IFN-γ": col[1].number_input("IFN-γ", value=float(base["IFN-γ"].median())),
-            "CD3_2": col[2].number_input("CD3_2", value=float(base["CD3_2"].median())),
-            "CD8": col[0].number_input("CD8", value=float(base["CD8"].median())),
-            "PPD_log": col[1].number_input(
-                "PPD_log", value=float(base["PPD_log"].median())
-            ),
-            "CD7": col[2].number_input("CD7", value=float(base["CD7"].median())),
-            "FOXP3": col[0].selectbox("FOXP3", ["Normal", "Alterado"]),
-        }
-        novo = pd.DataFrame([entrada])
-        if st.button("Prever", type="primary"):
-            self._resultado_predicao(novo)
-        return "Predição exibida"
 
     def _resultado_predicao(self, novo: pd.DataFrame) -> None:
         r = self.r
@@ -351,9 +331,7 @@ class Paginas:
 
     def montar(self) -> str:
         self.cabecalho()
-        abas = st.tabs(
-            ["Clustering", "Classificação", "Regressão", "Datasets", "Predição"]
-        )
+        abas = st.tabs(["Clustering", "Classificação", "Regressão", "Datasets"])
         with abas[0]:
             self.aba_clusterizacao()
         with abas[1]:
@@ -362,6 +340,4 @@ class Paginas:
             self.aba_regressao()
         with abas[3]:
             self.aba_dados()
-        with abas[4]:
-            self.aba_predicao()
         return "Página montada"

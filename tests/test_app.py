@@ -13,16 +13,6 @@ def test_app_abre_sem_erro():
     assert app.title[0].value == "Métricas de Modelos de Machine Learning"
 
 
-def test_botao_prever_mostra_resultado():
-    app = AppTest.from_file(APP, default_timeout=300).run()
-    app.button[0].click().run()
-    assert not app.exception
-    rotulos = [m.label for m in app.metric]
-    assert any(r.startswith("Classe prevista") for r in rotulos)
-    # tabela com a predição de cada algoritmo
-    assert len(app.dataframe) >= 3
-
-
 def test_clusterizacao_troca_de_variaveis():
     app = AppTest.from_file(APP, default_timeout=300).run()
     # escolher a mesma variável nas duas opções mostra um aviso
