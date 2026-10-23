@@ -275,60 +275,6 @@ class Paginas:
         )
         return "Dados exibidos"
 
-    def _resultado_predicao(self, novo: pd.DataFrame) -> None:
-        r = self.r
-        res = st.columns(3)
-        res[0].metric(
-            f"Classe prevista ({r.classificador.nome})",
-            str(r.classificador.prever(novo)[0]),
-        )
-        res[1].metric(
-            f"{ALVO_REGRESSAO} previsto ({r.regressor.nome})",
-            f"{r.regressor.prever(novo)[0]:.3f}",
-        )
-        res[2].metric(
-            f"Grupo ({r.clusterizador.nome})",
-            f"Grupo {r.clusterizador.prever(novo)[0]}",
-        )
-        st.write("**Predição de cada algoritmo:**")
-        tab = st.columns(3)
-        tab[0].dataframe(
-            pd.DataFrame(
-                {
-                    "Classificador": list(r.classificador.modelos),
-                    "Classe": [
-                        r.classificador.prever(novo, n)[0]
-                        for n in r.classificador.modelos
-                    ],
-                }
-            ),
-            hide_index=True,
-        )
-        tab[1].dataframe(
-            pd.DataFrame(
-                {
-                    "Regressor": list(r.regressor.modelos),
-                    ALVO_REGRESSAO: [
-                        round(float(r.regressor.prever(novo, n)[0]), 3)
-                        for n in r.regressor.modelos
-                    ],
-                }
-            ),
-            hide_index=True,
-        )
-        tab[2].dataframe(
-            pd.DataFrame(
-                {
-                    "Agrupamento": list(r.clusterizador.modelos),
-                    "Grupo": [
-                        int(r.clusterizador.prever(novo, n)[0])
-                        for n in r.clusterizador.modelos
-                    ],
-                }
-            ),
-            hide_index=True,
-        )
-
     def montar(self) -> str:
         self.cabecalho()
         abas = st.tabs(["Clustering", "Classificação", "Regressão", "Datasets"])
