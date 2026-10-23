@@ -1,7 +1,7 @@
 # Imagem do projeto: Python 3.12 + bibliotecas do app, dos testes e da AED
 FROM python:3.12-slim
 
-LABEL maintainer="Seu Nome"
+LABEL maintainer="Gabriela Koerich"
 
 # Pasta de trabalho dentro do container
 WORKDIR /app
