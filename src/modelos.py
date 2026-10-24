@@ -20,6 +20,8 @@ from scipy.stats import (
 from sklearn.base import clone
 from sklearn.cluster import DBSCAN, AgglomerativeClustering, KMeans
 from sklearn.compose import ColumnTransformer
+from sklearn.feature_selection import SelectKBest, f_regression
+from sklearn.impute import SimpleImputer
 from sklearn.ensemble import (
     GradientBoostingClassifier,
     RandomForestClassifier,
@@ -41,32 +43,39 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.svm import SVC, SVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
-from src.dados import (
-    ALVO_CLASSIFICACAO,
-    ALVO_REGRESSAO,
-    VARIAVEIS_CATEGORICAS,
-    VARIAVEIS_CLUSTER,
-    VARIAVEIS_NUMERICAS,
-)
+from src.dados import ALVO_CLASSIFICACAO, ALVO_REGRESSAO
 
 
-def _preprocessador(numericas: list[str]) -> ColumnTransformer:
-    """Padroniza numéricas e transforma categóricas em dummies."""
-    return ColumnTransformer(
-        [
-            ("num", StandardScaler(), numericas),
+def _preprocessador(numericas: list[str], categoricas: list[str]) -> ColumnTransformer:
+    """Preenche faltantes e padroniza numéricas; categóricas viram dummies.
+
+    Tudo é aprendido no treino (dentro do Pipeline): a mediana usada para
+    preencher faltantes vem só dos dados de treino de cada rodada.
+    """
+    etapas: list[tuple[str, Any, list[str]]] = [
+        (
+            "num",
+            make_pipeline(SimpleImputer(strategy="median"), StandardScaler()),
+            numericas,
+        )
+    ]
+    if categoricas:
+        etapas.append(
             (
                 "cat",
-                OneHotEncoder(handle_unknown="ignore", sparse_output=False),
-                VARIAVEIS_CATEGORICAS,
-            ),
-        ]
-    )
+                make_pipeline(
+                    SimpleImputer(strategy="most_frequent"),
+                    OneHotEncoder(handle_unknown="ignore", sparse_output=False),
+                ),
+                categoricas,
+            )
+        )
+    return ColumnTransformer(etapas)
 
 
 class _BaseSupervisionado:
@@ -74,7 +83,12 @@ class _BaseSupervisionado:
 
     CANDIDATOS: dict[str, tuple[Any, dict[str, list]]] = {}
 
-    def __init__(self) -> None:
+    def __init__(
+        self, numericas: list[str] | None = None, categoricas: list[str] | None = None
+    ) -> None:
+        # variáveis de entrada vindas da seleção feita no treino (selecao.py)
+        self.numericas: list[str] = list(numericas or [])
+        self.categoricas: list[str] = list(categoricas or [])
         self.modelos: dict[str, GridSearchCV] = {}
         self.selecao: dict[str, float] = {}
         self.nome: str | None = None
@@ -94,11 +108,11 @@ class _BaseSupervisionado:
 
     def melhores_parametros(self, nome: str) -> dict[str, Any]:
         params = self._modelo(nome).best_params_
-        return {k.replace("modelo__", ""): v for k, v in params.items()}
+        return {k.split("__")[-1]: v for k, v in params.items()}
 
     @property
-    def variaveis(self) -> list[str]:  # pragma: no cover - sobrescrito
-        raise NotImplementedError
+    def variaveis(self) -> list[str]:
+        return self.numericas + self.categoricas
 
 
 class Classificador(_BaseSupervisionado):
@@ -133,10 +147,6 @@ class Classificador(_BaseSupervisionado):
         ),
     }
 
-    @property
-    def variaveis(self) -> list[str]:
-        return VARIAVEIS_NUMERICAS + VARIAVEIS_CATEGORICAS
-
     def treinar(
         self, treino: pd.DataFrame, validacao: pd.DataFrame
     ) -> dict[str, float]:
@@ -144,7 +154,7 @@ class Classificador(_BaseSupervisionado):
         for nome, (estimador, grade) in self.CANDIDATOS.items():
             pipe = Pipeline(
                 [
-                    ("prep", _preprocessador(VARIAVEIS_NUMERICAS)),
+                    ("prep", _preprocessador(self.numericas, self.categoricas)),
                     ("modelo", clone(estimador)),
                 ]
             )
@@ -242,7 +252,14 @@ class Classificador(_BaseSupervisionado):
 
 
 class Regressor(_BaseSupervisionado):
-    """Prevê IFN-γ com 6 algoritmos e guarda todos."""
+    """Prevê IFN-γ com 6 algoritmos e guarda todos.
+
+    As candidatas são todas as numéricas (menos o alvo). Dentro do Pipeline,
+    o SelectKBest com f_regression escolhe as k mais ligadas ao IFN-γ, e o
+    GridSearchCV escolhe o k junto com os hiperparâmetros, só no treino.
+    """
+
+    OPCOES_K = [3, 5, 10]
 
     CANDIDATOS = {
         "Regressão Linear": (LinearRegression(), {}),
@@ -262,13 +279,11 @@ class Regressor(_BaseSupervisionado):
         ),
     }
 
-    @property
-    def numericas(self) -> list[str]:
-        return [v for v in VARIAVEIS_NUMERICAS if v != ALVO_REGRESSAO]
-
-    @property
-    def variaveis(self) -> list[str]:
-        return self.numericas + VARIAVEIS_CATEGORICAS
+    def variaveis_escolhidas(self, nome: str | None = None) -> list[str]:
+        """Variáveis que o SelectKBest do modelo `nome` escolheu."""
+        pipe = self._modelo(nome).best_estimator_
+        mascara = pipe.named_steps["selecao"].get_support()
+        return [v for v, usar in zip(self.variaveis, mascara) if usar]
 
     def treinar(
         self, treino: pd.DataFrame, validacao: pd.DataFrame
@@ -277,12 +292,17 @@ class Regressor(_BaseSupervisionado):
         for nome, (estimador, grade) in self.CANDIDATOS.items():
             pipe = Pipeline(
                 [
-                    ("prep", _preprocessador(self.numericas)),
+                    ("prep", _preprocessador(self.numericas, self.categoricas)),
+                    ("selecao", SelectKBest(f_regression)),
                     ("modelo", clone(estimador)),
                 ]
             )
+            opcoes_k = [k for k in self.OPCOES_K if k < len(self.variaveis)] + ["all"]
             busca = GridSearchCV(
-                pipe, grade, cv=5, scoring="neg_root_mean_squared_error"
+                pipe,
+                {**grade, "selecao__k": opcoes_k},
+                cv=5,
+                scoring="neg_root_mean_squared_error",
             )
             busca.fit(treino[self.variaveis], treino[ALVO_REGRESSAO])
             pred = busca.predict(validacao[self.variaveis])
@@ -367,8 +387,10 @@ class Clusterizador:
     }
 
     def __init__(self, variaveis: list[str] | None = None) -> None:
-        self.variaveis = variaveis or VARIAVEIS_CLUSTER
-        self.escala = StandardScaler()
+        # variáveis vindas da seleção feita no treino (selecao.py)
+        self.variaveis: list[str] = list(variaveis or [])
+        # faltantes pela mediana do treino, depois padronização
+        self.escala = make_pipeline(SimpleImputer(strategy="median"), StandardScaler())
         self.modelos: dict[str, KNeighborsClassifier] = {}
         self.parametros: dict[str, dict[str, Any]] = {}
         self.rotulos_treino: dict[str, np.ndarray] = {}

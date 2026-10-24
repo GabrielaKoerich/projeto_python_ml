@@ -1,6 +1,5 @@
 """Testes unitários das funções de dados."""
 
-import numpy as np
 import pandas as pd
 import pytest
 from pydantic import ValidationError
@@ -32,36 +31,20 @@ def test_carregar_dados_tipo_errado():
         carregar_dados(caminho=10)
 
 
-def test_estruturar_sem_faltantes(dados_brutos):
+def test_estruturar_remove_constantes_e_converte_logicas(dados_brutos):
     df = estruturar_dados(dados_brutos)
-    assert df.isna().sum().sum() == 0
-    assert "PPD_log" in df.columns
+    # nenhuma coluna constante sobra
+    assert (df.nunique(dropna=True) > 1).all()
+    # variáveis lógicas viram 0/1
+    assert set(df["TdT"].unique()) <= {0.0, 1.0}
+    # faltantes NÃO são preenchidos aqui (isso é feito no treino, no Pipeline)
+    assert df.isna().sum().sum() > 0
 
 
 def test_estruturar_nao_altera_original(dados_brutos):
     copia = dados_brutos.copy()
     estruturar_dados(dados_brutos)
     pd.testing.assert_frame_equal(copia, dados_brutos)
-
-
-def test_ppd_log_calculado_corretamente():
-    df = pd.DataFrame(
-        {
-            "TP53": [0.1, 0.2, 0.3],
-            "IFN-γ": [0.2, 0.3, 0.4],
-            "CD3_2": [1.0, 2.0, 3.0],
-            "CD8": [1.0, 2.0, 3.0],
-            "CD7": [0.3, 0.4, 0.5],
-            "PPD": [np.e - 1, np.e**3 - 1, np.nan],
-            "FOXP3": ["Normal", "Alterado", "Normal"],
-            "classe": ["BCG", "cancer", "leucemia"],
-        }
-    )
-    resultado = estruturar_dados(df)
-    assert resultado.loc[0, "PPD_log"] == pytest.approx(1.0)
-    assert resultado.loc[1, "PPD_log"] == pytest.approx(3.0)
-    # faltante preenchido com a média dos logs: (1 + 3) / 2 = 2
-    assert resultado.loc[2, "PPD_log"] == pytest.approx(2.0)
 
 
 def test_remover_duplicatas(dados_brutos):

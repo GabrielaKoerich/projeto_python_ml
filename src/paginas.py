@@ -1,8 +1,8 @@
 """Páginas do Streamlit (front end).
 
 Em cada aba, um cartão por algoritmo com os testes de hipótese e suas
-conclusões, uma tabela comparando todos os algoritmos e uma aba para
-prever novos pacientes.
+conclusões e uma tabela comparando todos os algoritmos. A aba Datasets
+mostra também como as variáveis foram escolhidas a partir do treino.
 """
 
 from typing import Any
@@ -12,7 +12,7 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 
-from src.dados import ALVO_REGRESSAO, VARIAVEIS_CLUSTER
+from src.dados import ALVO_REGRESSAO
 from src.modelos import Clusterizador
 from src.pipeline import Resultado, treinar_tudo
 
@@ -20,7 +20,9 @@ COLUNAS_POR_LINHA = 3
 ALFA = 0.05
 
 
-@st.cache_resource(show_spinner="Treinando todos os modelos (cerca de 1 minuto)...")
+@st.cache_resource(
+    show_spinner="Selecionando variáveis e treinando os modelos (cerca de 2 minutos)..."
+)
 def obter_resultado() -> Resultado:
     """Treina uma única vez e reaproveita entre as interações."""
     return treinar_tudo()
@@ -128,9 +130,11 @@ class Paginas:
     def aba_clusterizacao(self) -> str:
         st.subheader("Clusterização — K-means, DBSCAN e Hierárquico")
         col = st.columns((1, 4))
+        # as opções são as numéricas escolhidas pela seleção de variáveis
+        opcoes = self.r.selecao.numericas
         with col[0]:
-            variavel_1 = st.radio("Primeira variável:", VARIAVEIS_CLUSTER, index=0)
-            variavel_2 = st.radio("Segunda variável:", VARIAVEIS_CLUSTER, index=2)
+            variavel_1 = st.radio("Primeira variável:", opcoes, index=0)
+            variavel_2 = st.radio("Segunda variável:", opcoes, index=1)
         with col[1]:
             if variavel_1 == variavel_2:
                 st.warning("Escolha duas variáveis DIFERENTES.")
@@ -192,6 +196,7 @@ class Paginas:
         st.subheader(f"Classificação — {len(c.modelos)} algoritmos")
         st.write(
             f"Resumo ordenado pelo F1 na validação (destaque: **{c.nome}**). "
+            f"Variáveis de entrada, escolhidas no treino: {', '.join(c.variaveis)}. "
             "Nos cartões, o qui-quadrado compara as classes previstas no treino "
             "e no teste (H0 = distribuição homogênea)."
         )
@@ -222,6 +227,8 @@ class Paginas:
                     index=["Estatistica", "p-valor"],
                 ).round(4)
             )
+        escolhidas = ", ".join(g.variaveis_escolhidas(nome))
+        st.caption(f"Variáveis escolhidas (SelectKBest): {escolhidas}")
         observado = self.r.teste[ALVO_REGRESSAO]
         limites = [observado.min(), observado.max()]
         fig, ax = plt.subplots(figsize=(4, 3.4))
@@ -237,8 +244,10 @@ class Paginas:
         st.subheader(f"Regressão de {ALVO_REGRESSAO} — {len(g.modelos)} algoritmos")
         st.write(
             f"Resumo ordenado pelo RMSE na validação (destaque: **{g.nome}**). "
-            "Nos cartões, os 4 testes comparam as previsões do treino com as "
-            "do teste (H0 = as duas amostras são iguais)."
+            "Cada algoritmo escolhe, no treino, quantas e quais variáveis usar "
+            "(SelectKBest com f_regression). Nos cartões, os 4 testes comparam "
+            "as previsões do treino com as do teste (H0 = as duas amostras são "
+            "iguais)."
         )
         st.dataframe(g.tabela_resultados(self.r.teste).round(3), hide_index=True)
         for nome, coluna in grade(list(g.modelos)):
@@ -273,7 +282,39 @@ class Paginas:
             ),
             hide_index=True,
         )
+        self._selecao_variaveis()
         return "Dados exibidos"
+
+    def _selecao_variaveis(self) -> None:
+        """Mostra cada etapa da seleção de variáveis (feita só no treino)."""
+        s = self.r.selecao
+        st.subheader("Seleção de variáveis (calculada só no treino)")
+        st.markdown(
+            f"1. **Assimetria > 1 → log:** {', '.join(s.assimetricas) or '—'}\n"
+            "2. **Grupos correlacionados (|r| > 0,7) → um representante "
+            "(SequentialFeatureSelector):** "
+            + "; ".join(
+                f"{rep} (de {', '.join(grupo)})"
+                for rep, grupo in s.representantes.items()
+            )
+            + "\n"
+            f"3. **Separam as classes (teste F, p < 0,05):** {len(s.separam)} "
+            "numéricas\n"
+            "4. **Categóricas, uma por padrão:** "
+            + "; ".join(
+                f"{rep} (de {', '.join(grupo)})"
+                for rep, grupo in s.padroes_categoricos.items()
+            )
+            + "\n"
+            "5. **Seleção para a frente (F1-macro, validação cruzada no treino):** "
+            f"**{', '.join(s.variaveis)}**"
+        )
+        st.dataframe(
+            s.tabela_f.assign(
+                separa=lambda t: t["p_valor"] < 0.05,
+                escolhida=lambda t: t.index.isin(s.variaveis),
+            ).round(4)
+        )
 
     def montar(self) -> str:
         self.cabecalho()

@@ -2,19 +2,16 @@
 
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from pydantic import validate_call
 from sklearn.model_selection import train_test_split
 
 CAMINHO_PADRAO = Path(__file__).resolve().parent.parent / "dados" / "biomarcadores.csv"
 
-# Variáveis escolhidas na seleção de variáveis
-VARIAVEIS_NUMERICAS = ["TP53", "IFN-γ", "CD3_2", "CD8", "PPD_log", "CD7"]
-VARIAVEIS_CATEGORICAS = ["FOXP3"]
+# As variáveis de entrada NÃO são fixadas aqui: são escolhidas a partir do
+# treino em src/selecao.py. Aqui ficam só os alvos da pergunta do projeto.
 ALVO_CLASSIFICACAO = "classe"
 ALVO_REGRESSAO = "IFN-γ"
-VARIAVEIS_CLUSTER = ["PPD_log", "IFN-γ", "CD3_2"]
 
 
 @validate_call
@@ -44,30 +41,30 @@ def remover_duplicatas(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def estruturar_dados(df: pd.DataFrame) -> pd.DataFrame:
-    """Remove constantes, trata faltantes e cria PPD_log.
+    """Remove constantes e converte as variáveis lógicas em 0/1.
+
+    Faltantes, transformações e escolha de variáveis NÃO são feitos aqui,
+    porque dependem de estatísticas (mediana, assimetria, correlação) que
+    devem ser calculadas só no treino, depois da divisão.
 
     Parametros:
         df (pd.DataFrame): dados brutos.
     Retorna:
-        pd.DataFrame: dados prontos para modelagem.
+        pd.DataFrame: dados com todas as variáveis candidatas.
     """
     df = df.copy()
 
-    # 1. remove colunas constantes (apenas 1 valor distinto)
+    # 1. remove colunas constantes (apenas 1 valor distinto): não distinguem
+    #    nenhum paciente
     constantes = [c for c in df.columns if df[c].nunique(dropna=True) <= 1]
     df = df.drop(columns=constantes)
 
-    # 2. PPD é muito assimétrica -> log, e faltantes preenchidos com a média
-    df["PPD_log"] = np.log1p(df["PPD"])
-    df["PPD_log"] = df["PPD_log"].fillna(df["PPD_log"].mean())
+    # 2. variáveis lógicas (True/False) viram 0/1, para entrarem nos cálculos
+    for coluna in df.columns:
+        if set(df[coluna].dropna().unique()) <= {True, False}:
+            df[coluna] = df[coluna].astype(float)
 
-    # 3. demais numéricas faltantes -> mediana
-    for coluna in df.select_dtypes(include="number").columns:
-        df[coluna] = df[coluna].fillna(df[coluna].median())
-
-    # 4. mantme apenas as variáveis selecionadas + alvo
-    colunas = VARIAVEIS_NUMERICAS + VARIAVEIS_CATEGORICAS + [ALVO_CLASSIFICACAO]
-    return df[colunas].reset_index(drop=True)
+    return df.reset_index(drop=True)
 
 
 def dividir_dados(
