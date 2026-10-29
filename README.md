@@ -31,7 +31,7 @@ Na regressão, cada algoritmo escolhe suas variáveis com `SelectKBest` + `f_reg
 ## Estrutura
 ```
 dados/biomarcadores.csv      dados brutos
-notebooks/                   AED comentada (1ª entrega)
+notebooks/                   AED comentada
 src/dados.py                 aquisição, estruturação, divisão 70/15/15
 src/selecao.py               seleção de variáveis feita no treino
 src/modelos.py               classes Clusterizador, Classificador, Regressor
@@ -44,18 +44,6 @@ tests/                       testes unitários, integração e ponta a ponta (3�
 .github/workflows/ci.yml     CI: ruff, flake8, mypy, pytest + cobertura
 ```
 
-## Como rodar (Docker)
-Pré-requisito: Docker Desktop deve estar aberto. No PowerShell, na pasta do projeto:
-```powershell
-.\dev\subir_docker.ps1      # constrói a imagem e sobe o container "python-ml"
-.\dev\testes.ps1            # pytest + cobertura, ruff, mypy, flake8 no container
-.\dev\roda_streamlit.ps1    # app em http://localhost:8501
-```
-Jupyter Lab (AED) (relatório comentado) fica em http://localhost:8888. Para desligar: `docker compose down`.
-
-Arquivos: `docker/Dockerfile`, `docker/requirements-docker.txt`, `docker-compose.yml`.
-O CI do GitHub também constrói a imagem e roda os testes dentro do container.
-
 ## Resultados (conjunto de teste, 150 pacientes)
 O app mostra todos os algoritmos, cada um com métricas, teste de hipótese e gráfico. Destaques (escolhidos pela validação):
 
@@ -65,5 +53,4 @@ O app mostra todos os algoritmos, cada um com métricas, teste de hipótese e gr
 | Regressão de IFN-γ | Random Forest | R² 0,941; os 6 algoritmos ficam acima de 0,70 | R² ≥ 0,70 ✔ |
 | Clusterização (PPD_log × CD3_1) | Hierárquico, 2 grupos | silhueta 0,519 | silhueta ≥ 0,50 ✔ |
 
-As métricas devem ser lidas como otimistas: as 1000 linhas incluem cópias de pacientes (seção 9 da AED).
 
